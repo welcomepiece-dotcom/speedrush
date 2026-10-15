@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SpeedRush — Minigames Frenéticos Multiplayer</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="bg-particles"></div>
+
+<header id="topbar">
+  <div class="logo">⚡ Speed<span>Rush</span></div>
+  <div id="conn-status" class="conn offline" title="Status da conexão">● offline</div>
+</header>
+
+<main id="app">
+
+  <!-- TELA INICIAL -->
+  <section id="screen-home" class="screen active">
+    <div class="hero">
+      <h1>⚡ SpeedRush</h1>
+      <p class="tagline">Minigames caóticos. 2 a 8 jogadores. Quem for mais rápido vence!</p>
+      <div class="card">
+        <label>Seu nome
+          <input id="player-name" maxlength="12" placeholder="Ex: SonicBR" autocomplete="off" />
+        </label>
+        <label>Sua cor
+          <div id="color-picker" class="colors"></div>
+        </label>
+      </div>
+      <div class="btn-row">
+        <button id="btn-create" class="btn primary big">🎮 Criar sala</button>
+        <button id="btn-join-show" class="btn big">🔑 Entrar em sala</button>
+      </div>
+      <div id="join-box" class="card hidden">
+        <label>Código da sala (4 letras)
+          <input id="room-code" maxlength="4" placeholder="Ex: K7QZ" autocomplete="off" style="text-transform:uppercase" />
+        </label>
+        <button id="btn-join" class="btn primary">Entrar</button>
+      </div>
+      <div class="btn-row">
+        <button id="btn-local" class="btn ghost">🧪 Jogar sozinho (teste local, sem internet)</button>
+      </div>
+      <p id="home-error" class="error"></p>
+      <details class="help">
+        <summary>Como funciona o multiplayer?</summary>
+        <p>Um jogador cria a sala e vira <b>host</b>. O host recebe um código de 4 letras.
+        Amigos digitam o código em outro computador/celular <b>pela internet</b> e entram na mesma partida.</p>
+        <p>Conexão <b>P2P via WebRTC</b> com sinalização gratuita <b>PeerJS Cloud (0.peerjs.com)</b>.
+        Sem servidor próprio. É preciso HTTPS + internet. Se a conexão direta falhar (NAT restrito),
+        o jogo mostra o erro em vez de fingir que conectou. Veja o <b>README.md</b> para detalhes e TURN opcional.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="screen-lobby" class="screen">
+    <div class="card">
+      <h2>🏠 Sala <span id="lobby-code">----</span></h2>
+      <p class="hint" id="lobby-role">Você é o host. Compartilhe o código!</p>
+      <div class="share-row">
+        <button id="btn-copy" class="btn small">📋 Copiar código</button>
+        <button id="btn-copy-link" class="btn small">🔗 Copiar link</button>
+      </div>
+      <h3>Jogadores (<span id="lobby-count">0</span>/8)</h3>
+      <ul id="player-list"></ul>
+      <div class="btn-row">
+        <button id="btn-ready" class="btn">✔ Estou pronto</button>
+        <button id="btn-start" class="btn primary hidden">▶ Iniciar partida (host)</button>
+        <button id="btn-leave" class="btn danger">✖ Sair</button>
+      </div>
+      <p id="lobby-error" class="error"></p>
+      <p class="hint">Partida: <b>12 minigames</b> sorteados · cada um vale até 100 pts (🥇100 🥈80 🥉60 · concluiu 30 · não concluiu 0).</p>
+    </div>
+  </section>
+
+  <!-- JOGO -->
+  <section id="screen-game" class="screen">
+    <div id="hud">
+      <div id="hud-round">Rodada 1/12</div>
+      <div id="hud-heat">🙂 TRANQUILO · x1.0</div>
+      <div id="hud-game">—</div>
+      <div id="hud-timer">⏱ 10.0</div>
+    </div>
+    <div id="hud-sub">
+      <div id="hud-scores"></div>
+    </div>
+    <div id="banner" class="hidden"></div>
+    <div id="countdown" class="hidden">3</div>
+    <div id="toast-stack"></div>
+    <canvas id="game-canvas" width="800" height="500"></canvas>
+    <input id="type-box" class="hidden" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DIGITE AQUI!" />
+    <p id="game-hint"></p>
+  </section>
+
+  <!-- PLACAR ENTRE RODADAS -->
+  <section id="screen-score" class="screen">
+    <div class="card">
+      <h2 id="score-title">🏁 Rodada 1 — resultados</h2>
+      <ol id="score-list"></ol>
+      <p class="hint" id="score-next">Próximo minigame em <span id="score-count">4</span>s…</p>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="screen-final" class="screen">
+    <div id="confetti-zone"></div>
+    <div class="card">
+      <h2>🏆 A FESTA ACABOU!</h2>
+      <div id="podium"></div>
+      <p id="final-quip"></p>
+      <ol id="final-list"></ol>
+      <div class="btn-row">
+        <button id="btn-again" class="btn primary">🔁 De novo! De novo!</button>
+        <button id="btn-to-lobby" class="btn">🏠 Voltar ao lobby</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="audio-bar">
+  <span class="ab">🎪 <button id="btn-mute">🔊 Som on</button></span>
+  <span class="ab">🎵 Música <input id="vol-music" type="range" min="0" max="100" value="70" /></span>
+  <span class="ab">🔔 Efeitos <input id="vol-sfx" type="range" min="0" max="100" value="80" /></span>
+</div>
+
+<footer>
+  <small>SpeedRush · HTML5 Canvas + WebRTC P2P (PeerJS Cloud) · sem servidor próprio · feito com JS puro</small>
+</footer>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/heat.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/network.js"></script>
+<script src="js/minigames/tower.js"></script>
+<script src="js/minigames/vacuum.js"></script>
+<script src="js/minigames/typeword.js"></script>
+<script src="js/minigames/bridge.js"></script>
+<script src="js/minigames/domino.js"></script>
+<script src="js/minigames/laser.js"></script>
+<script src="js/minigames/conveyor.js"></script>
+<script src="js/minigames/code.js"></script>
+<script src="js/minigames/doors.js"></script>
+<script src="js/minigames/broken.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/game.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
